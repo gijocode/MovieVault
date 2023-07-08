@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.update_movie_db</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/gijomathew/scripts/update_movie_db.sh</string>
+  </array>
+  <key>WatchPaths</key>
+    <array>
+      <string>/Users/gijomathew/Torrents/torrent files/</string>
+    </array>
+  <key>StandardOutPath</key>
+  <string>/Users/gijomathew/scripts/logs/update_movie_db/output.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/gijomathew/scripts/logs/update_movie_db/error.log</string>
+</dict>
+</plist>
+

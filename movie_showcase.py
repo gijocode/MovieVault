@@ -6,7 +6,6 @@ from re import sub
 from pymongo import MongoClient
 
 
-cg = Cinemagoer()
 mongo_client = MongoClient()
 movie_collection = mongo_client.get_database("movie_showcase").get_collection("movies")
 actor_collection = mongo_client.get_database("movie_showcase").get_collection("actors")
@@ -25,6 +24,8 @@ actors_in_db = [
 
 def get_movie_info(movieTitle):
     try:
+        print(f"Getting info for {movieTitle}")
+        cg = Cinemagoer()
         mov = cg.search_movie(title=movieTitle)
         if mov:
             mov = mov[0]
@@ -33,19 +34,28 @@ def get_movie_info(movieTitle):
 
         if mov.movieID in movieids_in_db:
             return None
-        movie_data = cg.get_movie(mov.movieID, info=["main", "plot"])
+        movie_data = cg.get_movie(
+            mov.movieID, info=["main", "plot", "quotes", "synopsis", "release dates"]
+        )
 
         cast = (
             [actor.personID for actor in movie_data.get("cast")]
             if movie_data.get("cast")
             else []
         )
+        cast.extend([d.personID for d in movie_data.get("director") or []])
+        cast.extend([p.personID for p in movie_data.get("producer") or []])
         new_actors = [actor for actor in cast if actor not in actors_in_db]
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
-            actor_infos = [
-                executor.submit(cg.get_person, actor) for actor in new_actors
-            ]
+            cg = Cinemagoer()
+            actor_infos = []
+            for actor in new_actors:
+                cg = Cinemagoer()
+                try:
+                    actor_infos.append(executor.submit(cg.get_person, actor))
+                except:
+                    print("Error")
             for actor_info in concurrent.futures.as_completed(actor_infos):
                 try:
                     actor_data = actor_info.result()
@@ -53,7 +63,8 @@ def get_movie_info(movieTitle):
                         actor = {
                             "_id": actor_data.personID,
                             "name": actor_data.get("name"),
-                            "photo": actor_data.get("full-size headshot"),
+                            "full size photo": actor_data.get("full-size headshot"),
+                            "photo": actor_data.get("headshot"),
                         }
 
                         try:
@@ -67,10 +78,15 @@ def get_movie_info(movieTitle):
 
         movie = {
             "_id": movie_data.movieID,
-            "title": movie_data.get("smart long imdb canonical title").strip(' "'),
+            "title": movie_data.get("title").strip(' "'),
             "torrent_file": movieTitle,
-            "synopsis": movie_data.get("plot"),
+            "plot": movie_data.get("plot"),
             "rating": movie_data.get("rating"),
+            "genres": movie_data.get("genres"),
+            "original air date": movie_data.get("original air date"),
+            "director": [d.personID for d in movie_data.get("director") or []],
+            "producer": [p.personID for p in movie_data.get("producer") or []],
+            "synopsis": movie_data.get("synopsis"),
             "poster": movie_data.get("full-size cover url"),
             "cast": {
                 actor.personID: {"name": actor["name"], "role": str(actor.currentRole)}
@@ -88,7 +104,7 @@ def get_movie_names_from_torrents(files):
     junk_words = [
         ".torrent",
         "DTS",
-        "5.1",
+        "15.1",
         "AC3",
         "4K",
         "2160*",
@@ -135,7 +151,7 @@ if __name__ == "__main__":
 
     movs = get_movie_names_from_torrents(sorted_filenames)
     new_movies = [mov for mov in movs if mov not in movies_in_db]
-    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         movie_infos = [executor.submit(get_movie_info, mov) for mov in new_movies]
         for movie_info in concurrent.futures.as_completed(movie_infos):
             try:
@@ -147,3 +163,4 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"exception occurred for {movie_info}")
                 print(e)
+                break

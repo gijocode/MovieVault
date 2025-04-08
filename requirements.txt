@@ -1,7 +1,7 @@
 cinemagoer==2023.5.1
 dnspython==2.3.0
 IMDbPY==2022.7.9
-lxml==4.9.3
+lxml==5.3.2
 pymongo==4.4.0
 SQLAlchemy==2.0.18
 typing_extensions==4.7.1

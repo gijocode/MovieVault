@@ -47,7 +47,7 @@ def get_movie_info(movieTitle):
         cast.extend([p.personID for p in movie_data.get("producer") or []])
         new_actors = [actor for actor in cast if actor not in actors_in_db]
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             cg = Cinemagoer()
             actor_infos = []
             for actor in new_actors:
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     movs = get_movie_names_from_torrents(sorted_filenames)
     new_movies = [mov for mov in movs if mov not in movies_in_db]
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         movie_infos = [executor.submit(get_movie_info, mov) for mov in new_movies]
         for movie_info in concurrent.futures.as_completed(movie_infos):
             try:
